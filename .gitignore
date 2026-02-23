@@ -1,0 +1,24 @@
+# Secrets
+**/secrets.h
+**/secrets*.h
+
+# Arduino build artefacts
+**/build/
+**/*.bin
+**/*.elf
+**/*.map
+**/*.hex
+
+# macOS / Windows / Linux junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# VSCode/PlatformIO
+.vscode/
+.pio/
+
+# Optional: do NOT commit big vendor libs if you prefer
+# firmware/**/libraries/
