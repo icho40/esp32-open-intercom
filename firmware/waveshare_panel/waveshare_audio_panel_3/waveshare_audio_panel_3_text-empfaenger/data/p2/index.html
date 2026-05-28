@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tür – Partei 2</title>
+<style>
+  :root{
+    color-scheme:light;
+    --bg:#f4f6fa;
+    --fg:#1a1f2d;
+    --mut:#6b7080;
+    --card:#ffffff;
+    --border:#cfd5e3;
+    --accent:#0059cc;
+    --accent-bg:#e8f1ff;
+    --danger:#c62828;
+    --danger-bg:#ffe8e8;
+    --surface:#eef1f8;
+    --btn-bg:#ffffff;
+    --btn-border:#cfd5e3;
+    --btn-hover:#f3f5fa;
+    --btn-active:#e8eefc;
+    --ok:#0a8a4b;
+    --ok-bg:#e6f6ec;
+    --warn:#a66900;
+    --warn-bg:#fff3d6;
+    --err:#c62828;
+    --err-bg:#ffe8e8;
+  }
+
+  *{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:rgba(0,0,0,0);
+  }
+
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Gesamtes Layout:
+     - oben Video-Karte
+     - unten Steuerleiste wie eine Call-Bar
+  */
+  .wrap{
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    padding:1rem;
+    gap:1rem;
+  }
+
+  .videoCard{
+    flex:1;
+    min-height:0;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:1rem;
+    box-shadow:
+      0 30px 80px rgba(0,0,0,.07),
+      0 4px 12px rgba(0,0,0,.05);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* Video-Bereich */
+  .videoArea{
+    flex:1;
+    min-height:0;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+
+  .videoArea img{
+    max-width:100%;
+    max-height:100%;
+    object-fit:cover;
+    transition:transform .15s ease;
+    background:#dfe3ef;
+  }
+
+  /* Overlays innerh. des Bildbereichs */
+  .ov{
+    position:absolute;
+    left:.75rem;
+    bottom:.75rem;
+    background:rgba(255,255,255,.7);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    color:var(--fg);
+    font-size:.8rem;
+    line-height:1.3;
+    padding:.4rem .6rem;
+    border-radius:.5rem;
+    border:1px solid rgba(0,0,0,.08);
+    box-shadow:0 4px 16px rgba(0,0,0,.08);
+    opacity:0;
+    transition:opacity .25s;
+  }
+
+  .statusBox{
+    position:absolute;
+    right:.75rem;
+    top:.75rem;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.4rem;
+  }
+
+  .chipParty{
+    background:var(--accent-bg);
+    color:var(--accent);
+    border:1px solid rgba(0,89,204,.4);
+    font-size:.75rem;
+    font-weight:600;
+    padding:.35rem .5rem;
+    border-radius:.5rem;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+  }
+
+  .chipState{
+    font-size:.75rem;
+    font-weight:500;
+    border-radius:.5rem;
+    padding:.35rem .5rem;
+    border:1px solid transparent;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+  }
+
+  .chip-ok{
+    color:var(--ok);
+    background:var(--ok-bg);
+    border-color:rgba(10,138,75,.4);
+  }
+
+  .chip-warn{
+    color:var(--warn);
+    background:var(--warn-bg);
+    border-color:rgba(166,105,0,.4);
+  }
+
+  .chip-err{
+    color:var(--err);
+    background:var(--err-bg);
+    border-color:rgba(198,40,40,.4);
+  }
+
+  /* Fußleiste mit Buttons */
+  .controlBar{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:1rem;
+    box-shadow:
+      0 30px 80px rgba(0,0,0,.07),
+      0 4px 12px rgba(0,0,0,.05);
+    padding:.75rem .75rem 1rem;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    justify-content:center;
+    gap:.75rem;
+  }
+
+  .btn{
+    background:var(--btn-bg);
+    border:1px solid var(--btn-border);
+    border-radius:.8rem;
+    font-size:.9rem;
+    font-weight:600;
+    line-height:1.3;
+    padding:.8rem 1rem;
+    min-width:5.2rem;
+    text-align:center;
+    color:var(--fg);
+    cursor:pointer;
+    box-shadow:0 3px 6px rgba(0,0,0,.05);
+    user-select:none;
+    touch-action:manipulation;
+  }
+  .btn:active{
+    background:var(--btn-active);
+  }
+  .btn:hover{
+    background:var(--btn-hover);
+  }
+
+  .btnPrimary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    box-shadow:0 8px 20px rgba(0,89,204,.35);
+  }
+  .btnPrimary:hover{
+    background:var(--accent);
+    filter:brightness(1.07);
+  }
+  .btnPrimary:active{
+    filter:brightness(.95);
+  }
+
+  .btnDanger{
+    background:var(--danger-bg);
+    border-color:var(--danger);
+    color:var(--danger);
+    box-shadow:0 8px 20px rgba(198,40,40,.15);
+  }
+  .btnDanger.active{
+    background:var(--danger);
+    border-color:var(--danger);
+    color:#fff;
+    box-shadow:0 8px 20px rgba(198,40,40,.35);
+  }
+
+  /* Kleine Infozeile unter der ControlBar (Status des Gesprächs etc.) */
+  .callInfo{
+    font-size:.8rem;
+    line-height:1.4;
+    color:var(--mut);
+    text-align:center;
+  }
+
+  @media(min-width:768px){
+    body{font-size:17px;}
+    .btn{font-size:.9rem;padding:.9rem 1.1rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Kamera-Karte -->
+  <section class="videoCard">
+    <div class="videoArea">
+      <img id="img" alt="Live P1" referrerpolicy="no-referrer">
+      <div class="ov" id="ov">Verbinden…</div>
+
+      <div class="statusBox">
+        <div class="chipParty">Partei&nbsp;1</div>
+        <div class="chipState chip-warn" id="stChip">Verbinden…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steuerleiste -->
+  <section class="controlBar">
+    <button class="btn btnPrimary" id="btnUnlock">🔓 Tür öffnen</button>
+    <button class="btn btnDanger"  id="btnTalk">🎤Sprechen </button>
+    <button class="btn"            id="btnFit">🔍&nbsp;Fit</button>
+    <button class="btn"            id="btnCover">🖼&nbsp;Cover</button>
+    <button class="btn"            id="btnRot">↻ 90°</button>
+    <button class="btn"            id="btnSnap">📷 Foto</button>
+  </section>
+<audio id="doorAudio" playsinline preload="none" controls></audio>
+  <div class="callInfo">
+    Live-Ansicht aktiv · Mikrofon Haustür offen · Eigene Stimme noch stumm
+  </div>
+</div>
+<script>
+(()=> {
+  // ==== PARTY SETUP ====
+  const party = 2;                 // in p2 -> 2, in p3 -> 3
+  const BASE  = `/p${party}`;      // "/p1", "/p2", "/p3"
+
+  // ==== ELEMENTS ====
+  const img = document.getElementById('img');
+  const ov  = document.getElementById('ov');
+  const st  = document.getElementById('st');
+  const btnTalk   = document.getElementById('btnTalk');
+  const doorAudio = document.getElementById('doorAudio');
+
+  // Klingeln wurde angezeigt -> Server "ack"
+  fetch(`/api/call/ack`, {
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:`party=${party}`
+  }).catch(()=>{});
+
+  let rot = 0;
+  let talking = false;
+
+  function setOV(t){
+    ov.textContent=t;
+    ov.style.opacity=1;
+    clearTimeout(ov._t);
+    ov._t=setTimeout(()=>ov.style.opacity=.0,900);
+  }
+  function setST(t,c){ st.textContent=t; st.className=c||''; }
+
+  // ==== VIDEO ====
+  function streamURL(){ return `${BASE}/stream?fps=0&nocache=${Date.now()}`; }
+  function startVideo(){ img.src = streamURL(); setST('Verbinden…','warn'); }
+
+  img.addEventListener('load', ()=> setST('Verbunden','ok'));
+  img.addEventListener('error',()=> { setST('Fehler','err'); setTimeout(startVideo,1500); });
+
+  // Controls
+  document.getElementById('btnFit').onclick   = ()=> { img.style.objectFit='contain'; setOV('Fit'); };
+  document.getElementById('btnCover').onclick = ()=> { img.style.objectFit='cover';   setOV('Cover'); };
+  document.getElementById('btnRot').onclick   = ()=> { rot=(rot+90)%360; img.style.transform=`rotate(${rot}deg)`; };
+
+  // Snapshot
+  document.getElementById('btnSnap').onclick = async ()=>{
+    try{
+      const r = await fetch(`${BASE}/snapshot`, {cache:'no-store'}); if(!r.ok) throw 0;
+      const b = await r.blob(); const a=document.createElement('a');
+      a.href=URL.createObjectURL(b);
+      a.download=`p${party}_${new Date().toISOString().replace(/[:.]/g,'-')}.jpg`;
+      a.click();
+      setOV('Snapshot ok');
+    }catch{ setOV('Snapshot fail'); }
+  };
+
+  // ==== AUDIO (ESP -> Tablet) ====
+  async function startDoorAudio(){
+    // Wichtig: play() muss aus einer User-Interaktion kommen -> passiert hier im Button-Down
+    doorAudio.src = `${BASE}/audio?nocache=${Date.now()}`;
+    try { await doorAudio.play(); } catch(e) { /* autoplay block */ }
+  }
+  function stopDoorAudio(){
+    try { doorAudio.pause(); } catch {}
+    doorAudio.src = "";
+  }
+
+  function setTalkUI(on){
+    talking = on;
+    btnTalk.classList.toggle('danger', on);
+    btnTalk.textContent = on ? "🎤 Sprechen…" : "🎤 Sprechen";
+  }
+
+  async function talkStart(){
+    if (talking) return;
+    setTalkUI(true);
+    setOV("Audio an");
+
+    // Server informieren (optional, aber sinnvoll)
+    fetch(`/api/p${party}/talk/start`, {method:'POST'}).catch(()=>{});
+
+    await startDoorAudio();
+  }
+
+  async function talkStop(){
+    if (!talking) return;
+    setTalkUI(false);
+    setOV("Audio aus");
+
+    stopDoorAudio();
+    fetch(`/api/p${party}/talk/stop`, {method:'POST'}).catch(()=>{});
+  }
+
+  // ==== PUSH-TO-TALK (press & hold) ====
+  btnTalk.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    try { btnTalk.setPointerCapture(e.pointerId); } catch {}
+    talkStart();
+  });
+  btnTalk.addEventListener('pointerup', (e)=>{ e.preventDefault(); talkStop(); });
+  btnTalk.addEventListener('pointercancel', (e)=>{ e.preventDefault(); talkStop(); });
+  btnTalk.addEventListener('pointerleave', ()=>{ talkStop(); });
+
+  // Sicherheitsnetz: wenn Fully/Browser Fokus verliert -> stoppen
+  window.addEventListener('blur', talkStop);
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) talkStop(); });
+
+  // ==== START ====
+  setTalkUI(false);
+  startVideo();
+})();
+</script>
+
+
+
+</body>
+</html>
+
