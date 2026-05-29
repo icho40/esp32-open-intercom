@@ -1,4 +1,4 @@
-# Gegensprechanlage Erwin
+# Gegensprechanlage
 
 Zwei-ESP Architektur:
 
