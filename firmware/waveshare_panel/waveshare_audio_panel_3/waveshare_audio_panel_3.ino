@@ -15,148 +15,19 @@
 #include <AsyncTCP.h>
 #include <LittleFS.h>
 #include <ESPmDNS.h>
-#include "driver/uart.h"
 #include <memory>
 #include <algorithm>
 
 #include "secrets.h"
 #include "AppState.h"
+#include "UartIngest.h"
 
 // ================= CONFIG =================
 #define USE_MDNS   1
 #define MDNS_NAME  "tuer"
 
-#define UART_PORT   UART_NUM_1
-#define PIN_UART_RX 18
-#define UART_BAUD   500000
-
-#define JPEG_MAX (120 * 1024)
-
 // ================= GLOBALS =================
 AsyncWebServer server(80);
-
-static uint8_t* gJpeg = nullptr;
-static size_t gLen = 0;
-static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-
-static uint8_t* encBuf = nullptr;
-static uint8_t* decBuf = nullptr;
-static size_t pktLen = 0;
-
-typedef struct __attribute__((packed)) {
-  uint8_t  type;
-  uint16_t seq;
-  uint32_t ts_ms;
-  uint32_t payload_len;
-} pkt_hdr_t;
-
-// ================= COBS =================
-static size_t cobs_decode(const uint8_t* in, size_t len, uint8_t* out) {
-  const uint8_t* end = in + len;
-  size_t o = 0;
-
-  while (in < end) {
-    uint8_t code = *in++;
-    if (code == 0) return 0;
-
-    for (uint8_t i = 1; i < code; i++) {
-      if (in >= end) return 0;
-      out[o++] = *in++;
-    }
-
-    if (code < 0xFF && in < end) {
-      out[o++] = 0x00;
-    }
-  }
-
-  return o;
-}
-
-static void setFrame(const uint8_t* src, size_t len) {
-  taskENTER_CRITICAL(&mux);
-
-  if (gJpeg) {
-    free(gJpeg);
-    gJpeg = nullptr;
-    gLen = 0;
-  }
-
-  gJpeg = (uint8_t*)ps_malloc(len);
-  if (gJpeg) {
-    memcpy(gJpeg, src, len);
-    gLen = len;
-  }
-
-  taskEXIT_CRITICAL(&mux);
-}
-
-// ================= UART TASK =================
-void uartTask(void*) {
-  uart_config_t cfg = {
-    .baud_rate = UART_BAUD,
-    .data_bits = UART_DATA_8_BITS,
-    .parity = UART_PARITY_DISABLE,
-    .stop_bits = UART_STOP_BITS_1,
-    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-    .rx_flow_ctrl_thresh = 0,
-    .source_clk = UART_SCLK_APB
-  };
-
-  uart_param_config(UART_PORT, &cfg);
-  uart_set_pin(UART_PORT, UART_PIN_NO_CHANGE, PIN_UART_RX,
-               UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-  uart_driver_install(UART_PORT, 16384, 0, 0, NULL, 0);
-
-  uint8_t rx[1024];
-
-  for (;;) {
-    int n = uart_read_bytes(UART_PORT, rx, sizeof(rx), 20 / portTICK_PERIOD_MS);
-    if (n <= 0) continue;
-
-    for (int i = 0; i < n; i++) {
-      uint8_t b = rx[i];
-      appStateAddReceivedBytes(1);
-
-      if (b == 0x00) {
-        size_t dec = cobs_decode(encBuf, pktLen, decBuf);
-        pktLen = 0;
-
-        if (dec >= sizeof(pkt_hdr_t)) {
-          pkt_hdr_t hdr;
-          memcpy(&hdr, decBuf, sizeof(hdr));
-
-          size_t need = sizeof(hdr) + hdr.payload_len;
-
-          if (hdr.type == 0x01 &&
-              need == dec &&
-              hdr.payload_len > 0 &&
-              hdr.payload_len <= JPEG_MAX) {
-
-            setFrame(decBuf + sizeof(hdr), hdr.payload_len);
-            const uint32_t frames = appStateIncrementFrames();
-
-            if ((frames % 30) == 0) {
-              Serial.printf("[FRAME] frames=%u jpeg=%u\n",
-                            (unsigned)frames, (unsigned)gLen);
-            }
-          } else {
-            Serial.printf("[DROP] dec=%u type=%02X len=%u need=%u\n",
-                          (unsigned)dec,
-                          (unsigned)hdr.type,
-                          (unsigned)hdr.payload_len,
-                          (unsigned)need);
-          }
-        }
-      } else {
-        if (pktLen < JPEG_MAX + 256) {
-          encBuf[pktLen++] = b;
-        } else {
-          pktLen = 0;
-        }
-      }
-    }
-  }
-}
 
 // ================= MJPEG =================
 class MJPEGResponse : public AsyncAbstractResponse {
@@ -194,18 +65,7 @@ public:
           _tmpLen = 0;
         }
 
-        taskENTER_CRITICAL(&mux);
-        size_t L = gLen;
-        uint8_t* p = gJpeg;
-
-        if (p && L) {
-          _tmp = (uint8_t*)malloc(L);
-          if (_tmp) {
-            memcpy(_tmp, p, L);
-            _tmpLen = L;
-          }
-        }
-        taskEXIT_CRITICAL(&mux);
+        uartIngestCopyFrame(&_tmp, &_tmpLen);
 
         _hdr = String("Content-Type: image/jpeg\r\nContent-Length: ") +
                String(_tmpLen) + "\r\n\r\n";
@@ -297,13 +157,7 @@ void setupRoutes() {
     uint8_t* copy = nullptr;
     size_t L = 0;
 
-    taskENTER_CRITICAL(&mux);
-    if (gJpeg && gLen) {
-      L = gLen;
-      copy = (uint8_t*)malloc(L);
-      if (copy) memcpy(copy, gJpeg, L);
-    }
-    taskEXIT_CRITICAL(&mux);
+    uartIngestCopyFrame(&copy, &L);
 
     if (!copy || !L) {
       if (copy) free(copy);
@@ -326,7 +180,7 @@ void setupRoutes() {
       "heap=%u psram=%u jpeg=%u frames=%u bytes=%u p1=%s p2=%s p3=%s",
       ESP.getFreeHeap(),
       ESP.getFreePsram(),
-      (unsigned)gLen,
+      (unsigned)uartIngestFrameLength(),
       (unsigned)appStateGetFrames(),
       (unsigned)appStateGetReceivedBytes(),
       appStateGetPartyText(1),
@@ -423,15 +277,7 @@ void setup() {
   }
 #endif
 
-  encBuf = (uint8_t*)ps_malloc(JPEG_MAX + 256);
-  decBuf = (uint8_t*)ps_malloc(JPEG_MAX + 256);
-
-  if (!encBuf || !decBuf) {
-    Serial.println("[UART] buffer alloc failed");
-    while (true) delay(1000);
-  }
-
-  xTaskCreatePinnedToCore(uartTask, "uart", 4096, NULL, 1, NULL, 1);
+  uartIngestBegin();
 
   setupRoutes();
   server.begin();
