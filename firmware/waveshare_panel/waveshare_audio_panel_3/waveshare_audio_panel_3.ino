@@ -20,6 +20,7 @@
 #include <algorithm>
 
 #include "secrets.h"
+#include "AppState.h"
 
 // ================= CONFIG =================
 #define USE_MDNS   1
@@ -29,36 +30,13 @@
 #define PIN_UART_RX 18
 #define UART_BAUD   500000
 
-#define PIN_BTN_P1  4
-#define PIN_BTN_P2  5
-#define PIN_BTN_P3  6
-
 #define JPEG_MAX (120 * 1024)
-
-static const uint32_t RING_TIMEOUT_MS = 30 * 1000;
-static const uint32_t BTN_DEBOUNCE_MS = 120;
 
 // ================= GLOBALS =================
 AsyncWebServer server(80);
 
-enum CallState : uint8_t {
-  CS_IDLE = 0,
-  CS_RING = 1
-};
-
-volatile CallState stateP1 = CS_IDLE;
-volatile CallState stateP2 = CS_IDLE;
-volatile CallState stateP3 = CS_IDLE;
-
-uint32_t ringSinceP1 = 0;
-uint32_t ringSinceP2 = 0;
-uint32_t ringSinceP3 = 0;
-
 static uint8_t* gJpeg = nullptr;
 static size_t gLen = 0;
-static uint32_t gFrames = 0;
-static uint32_t gBytes = 0;
-
 static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 static uint8_t* encBuf = nullptr;
@@ -137,7 +115,7 @@ void uartTask(void*) {
 
     for (int i = 0; i < n; i++) {
       uint8_t b = rx[i];
-      gBytes++;
+      appStateAddReceivedBytes(1);
 
       if (b == 0x00) {
         size_t dec = cobs_decode(encBuf, pktLen, decBuf);
@@ -155,11 +133,11 @@ void uartTask(void*) {
               hdr.payload_len <= JPEG_MAX) {
 
             setFrame(decBuf + sizeof(hdr), hdr.payload_len);
-            gFrames++;
+            const uint32_t frames = appStateIncrementFrames();
 
-            if ((gFrames % 30) == 0) {
+            if ((frames % 30) == 0) {
               Serial.printf("[FRAME] frames=%u jpeg=%u\n",
-                            (unsigned)gFrames, (unsigned)gLen);
+                            (unsigned)frames, (unsigned)gLen);
             }
           } else {
             Serial.printf("[DROP] dec=%u type=%02X len=%u need=%u\n",
@@ -285,57 +263,6 @@ private:
   size_t _tmpLen;
 };
 
-// ================= BUTTON / STATE =================
-void ringParty(int p) {
-  if (p == 1) {
-    stateP1 = CS_RING;
-    ringSinceP1 = millis();
-    Serial.println("[RING] P1");
-  }
-
-  if (p == 2) {
-    stateP2 = CS_RING;
-    ringSinceP2 = millis();
-    Serial.println("[RING] P2");
-  }
-
-  if (p == 3) {
-    stateP3 = CS_RING;
-    ringSinceP3 = millis();
-    Serial.println("[RING] P3");
-  }
-}
-
-void handleButtons() {
-  static bool lastP1 = HIGH;
-  static bool lastP2 = HIGH;
-  static bool lastP3 = HIGH;
-  static uint32_t lastMs = 0;
-
-  if (millis() - lastMs < BTN_DEBOUNCE_MS) return;
-  lastMs = millis();
-
-  bool nowP1 = digitalRead(PIN_BTN_P1);
-  bool nowP2 = digitalRead(PIN_BTN_P2);
-  bool nowP3 = digitalRead(PIN_BTN_P3);
-
-  if (lastP1 == HIGH && nowP1 == LOW) ringParty(1);
-  if (lastP2 == HIGH && nowP2 == LOW) ringParty(2);
-  if (lastP3 == HIGH && nowP3 == LOW) ringParty(3);
-
-  lastP1 = nowP1;
-  lastP2 = nowP2;
-  lastP3 = nowP3;
-}
-
-void handleTimeouts() {
-  uint32_t now = millis();
-
-  if (stateP1 == CS_RING && now - ringSinceP1 > RING_TIMEOUT_MS) stateP1 = CS_IDLE;
-  if (stateP2 == CS_RING && now - ringSinceP2 > RING_TIMEOUT_MS) stateP2 = CS_IDLE;
-  if (stateP3 == CS_RING && now - ringSinceP3 > RING_TIMEOUT_MS) stateP3 = CS_IDLE;
-}
-
 // ================= HELPERS =================
 void listDir(File dir, String& out, const String& base = "/") {
   while (true) {
@@ -400,11 +327,11 @@ void setupRoutes() {
       ESP.getFreeHeap(),
       ESP.getFreePsram(),
       (unsigned)gLen,
-      (unsigned)gFrames,
-      (unsigned)gBytes,
-      stateP1 == CS_RING ? "ring" : "idle",
-      stateP2 == CS_RING ? "ring" : "idle",
-      stateP3 == CS_RING ? "ring" : "idle"
+      (unsigned)appStateGetFrames(),
+      (unsigned)appStateGetReceivedBytes(),
+      appStateGetPartyText(1),
+      appStateGetPartyText(2),
+      appStateGetPartyText(3)
     );
 
     r->send(200, "text/plain", buf);
@@ -412,9 +339,9 @@ void setupRoutes() {
 
   server.on("/api/state", HTTP_GET, [](AsyncWebServerRequest* r) {
     String json = "{";
-    json += "\"p1\":\"" + String(stateP1 == CS_RING ? "ring" : "idle") + "\",";
-    json += "\"p2\":\"" + String(stateP2 == CS_RING ? "ring" : "idle") + "\",";
-    json += "\"p3\":\"" + String(stateP3 == CS_RING ? "ring" : "idle") + "\"";
+    json += "\"p1\":\"" + String(appStateGetPartyText(1)) + "\",";
+    json += "\"p2\":\"" + String(appStateGetPartyText(2)) + "\",";
+    json += "\"p3\":\"" + String(appStateGetPartyText(3)) + "\"";
     json += "}";
 
     AsyncWebServerResponse* res =
@@ -432,9 +359,10 @@ void setupRoutes() {
 
     int p = r->getParam("party", true)->value().toInt();
 
-    if (p == 1) stateP1 = CS_IDLE;
-    if (p == 2) stateP2 = CS_IDLE;
-    if (p == 3) stateP3 = CS_IDLE;
+    if (!appStateAcknowledgeParty(p)) {
+      r->send(400, "text/plain", "invalid party");
+      return;
+    }
 
     r->send(200, "text/plain", "OK");
   });
@@ -467,9 +395,7 @@ void setup() {
     Serial.println("[PSRAM] NOT FOUND");
   }
 
-  pinMode(PIN_BTN_P1, INPUT_PULLUP);
-  pinMode(PIN_BTN_P2, INPUT_PULLUP);
-  pinMode(PIN_BTN_P3, INPUT_PULLUP);
+  appStateBegin();
 
   if (!LittleFS.begin(true)) {
     Serial.println("[FS] LittleFS mount failed");
@@ -514,7 +440,7 @@ void setup() {
 }
 
 void loop() {
-  handleButtons();
-  handleTimeouts();
+  appStateHandleButtons();
+  appStateHandleTimeouts();
   delay(10);
 }
