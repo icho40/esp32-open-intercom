@@ -1,5 +1,5 @@
-# Erwin Intercom – Gegensprechanlage
 
+# esp32-open-intercom
 Zwei-ESP-Architektur für eine moderne Gegensprechanlage.
 
 ## Architektur
@@ -19,5 +19,22 @@ Nachrichtentypen: `'J'`, `'A'`, `'E'`, `'C'`
 
 Das Projekt benötigt WiFi-Zugangsdaten (und ggf. weitere Secrets).
 
-```bash
+Kopiere die Vorlage:
 cp secrets.h.example secrets.h
+
+Öffne danach secrets.h und trage deine Werte ein:
+
+#define WIFI_SSID       "MeinWLAN"
+#define WIFI_PASSWORD   "MeinPasswort"
+
+Wichtig: secrets.h ist in .gitignore und wird nicht ins Repository committed.
+
+### 2. Dokumentation
+
+- ARCHITECTURE.md – Gesamtarchitektur
+- PROTOCOL_UART.md – UART-Protokoll (COBS + CRC32)
+- PINOUT.md – Pinbelegung beider Boards
+
+## Lizenz
+
+Siehe LICENSE
