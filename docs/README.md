@@ -1,13 +1,23 @@
-# Gegensprechanlage
+# Erwin Intercom – Gegensprechanlage
 
-Zwei-ESP Architektur:
+Zwei-ESP-Architektur für eine moderne Gegensprechanlage.
 
-- **XIAO ESP32-S3 Sense**: Kamera + Mikrofon + später Face-Recognition (Sensor/AI-Knoten)
-- **Waveshare ESP32-S3 DevKit-NxR8**: Klingel/Parties, Audio-Ausgabe, Webserver/Streaming (Gateway/Panel)
+## Architektur
 
-Kommunikation zwischen XIAO und Waveshare: UART (TX/RX + GND), Protokoll: COBS + CRC32 + Typen 'J'/'A'/'E'/'C'.
+| Gerät | Rolle | Aufgaben |
+|-------|------|---------|
+| **XIAO ESP32-S3 Sense** | Sensor / AI-Knoten | Kamera, Mikrofon, später Face-Recognition |
+| **Waveshare ESP32-S3 DevKit-NxR8** | Gateway / Panel | Klingel, Audio-Ausgabe, Webserver, Streaming |
 
-Dokumentation:
-- docs/ARCHITECTURE.md
-- docs/PROTOCOL_UART.md
-- docs/PINOUT.md
+**Kommunikation** zwischen den beiden Boards:  
+UART (TX/RX + GND) mit dem Protokoll **COBS + CRC32**  
+Nachrichtentypen: `'J'`, `'A'`, `'E'`, `'C'`
+
+## Einrichtung
+
+### 1. Secrets anlegen
+
+Das Projekt benötigt WiFi-Zugangsdaten (und ggf. weitere Secrets).
+
+```bash
+cp secrets.h.example secrets.h
