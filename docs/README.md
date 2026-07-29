@@ -26,7 +26,7 @@ Der Schwerpunkt liegt auf einer offenen, nachvollziehbaren Lösung für Bastler 
 | Kamera | ✅ |
 | Videostream (MJPEG) | ✅ |
 | Bis zu drei Klingeltaster | ✅ |
-| Mehrere browserbasierte Innenstationen | ✅ |
+| Mehrere Innenstationen (Tablet, Smartphone oder PC) | ✅ |
 | Audio | 🚧 |
 | Gegensprechen | 🚧 |
 | MQTT | 🚧 |
