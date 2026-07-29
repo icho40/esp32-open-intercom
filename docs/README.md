@@ -92,20 +92,19 @@ Die Reihenfolge kann sich während der Entwicklung ändern.
 
 ## Hardware
 
-### Außenstation
+### Türstation
 
 - Seeed XIAO ESP32-S3 Sense
 - OV2640 Kamera
+- Mikrofon
+- bis zu drei Klingeltaster
+- Status-LEDs
 
-### Inneneinheit
+### Controller
 
-- Waveshare ESP32-S3
-- INMP441 Mikrofon
+- ESP32-S3-Board
 - MAX98357A Audioverstärker
 - Lautsprecher
-
----
-
 ## Software
 
 - Arduino IDE
