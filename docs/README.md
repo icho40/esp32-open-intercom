@@ -37,7 +37,7 @@ Der Schwerpunkt liegt auf einer offenen, nachvollziehbaren Lösung für Bastler 
 
 ## Systemübersicht
 
-![Blockdiagramm](docs/images/Blockdiagramm.png)
+![Blockdiagramm](images/Blockdiagramm.png)
 
 Das System besteht aus zwei ESP32-S3-Modulen.
 
