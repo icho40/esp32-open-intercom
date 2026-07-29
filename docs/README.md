@@ -2,6 +2,7 @@
 
 > **Work in Progress**  
 > Eine vollständig lokale Video-Türsprechanlage auf Basis von ESP32 – ohne Cloud, ohne Hersteller-App und komplett im eigenen Netzwerk.
+> Als Innenstation genügt ein beliebiger Webbrowser – eine App ist nicht erforderlich.
 
 ---
 
