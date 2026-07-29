@@ -70,7 +70,7 @@ Die Kommunikation zwischen beiden ESP32 erfolgt über eine schnelle UART-Verbind
 - MJPEG-Livestream
 - mehrere virtuelle Innenstationen
 - browserbasierte Bedienung
-- getrennte Kamera- und Audiohardware
+- Aufteilung auf Türstation und zentralen Controller
 - modularer Aufbau
 - vollständig lokaler Betrieb
 
