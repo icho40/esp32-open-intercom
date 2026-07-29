@@ -50,12 +50,16 @@ Das System besteht aus zwei ESP32-S3-Modulen.
 
 Die Außenstation erzeugt den Videostream und erkennt Klingelereignisse.
 
-### Audio-/Steuereinheit
+### Controller
 
-- Waveshare ESP32-S3
-- Webserver
-- Audio-Hardware
-- Steuerlogik
+Das Projekt verwendet einen zweiten ESP32-S3 als zentrale Steuereinheit.
+
+Er übernimmt
+
+- die Kommunikation mit der Türstation,
+- die Bereitstellung der Weboberfläche,
+- die Audioausgabe,
+- sowie künftig MQTT und die Home-Assistant-Anbindung.
 
 Die Kommunikation zwischen beiden ESP32 erfolgt über eine schnelle UART-Verbindung.
 
