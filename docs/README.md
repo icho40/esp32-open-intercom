@@ -1,13 +1,135 @@
-# Gegensprechanlage
+# ESP32 Open Intercom
 
-Zwei-ESP Architektur:
+> **Work in Progress**  
+> Eine vollständig lokale Video-Türsprechanlage auf Basis von ESP32 – ohne Cloud, ohne Hersteller-App und komplett im eigenen Netzwerk.
 
-- **XIAO ESP32-S3 Sense**: Kamera + Mikrofon + später Face-Recognition (Sensor/AI-Knoten)
-- **Waveshare ESP32-S3 DevKit-NxR8**: Klingel/Parties, Audio-Ausgabe, Webserver/Streaming (Gateway/Panel)
+---
 
-Kommunikation zwischen XIAO und Waveshare: UART (TX/RX + GND), Protokoll: COBS + CRC32 + Typen 'J'/'A'/'E'/'C'.
+## Projektziel
 
-Dokumentation:
-- docs/ARCHITECTURE.md
-- docs/PROTOCOL_UART.md
-- docs/PINOUT.md
+Dieses Projekt entstand aus dem Wunsch nach einer Video-Türsprechanlage, die
+
+- vollständig lokal arbeitet,
+- keine Cloud benötigt,
+- keine Hersteller-App voraussetzt,
+- auf preiswerter Standardhardware basiert,
+- beliebig erweitert werden kann.
+
+Der Schwerpunkt liegt auf einer offenen, nachvollziehbaren Lösung für Bastler und Maker.
+
+---
+
+## Aktueller Entwicklungsstand
+
+| Funktion | Status |
+|----------|:------:|
+| Kamera | ✅ |
+| Videostream (MJPEG) | ✅ |
+| Bis zu drei Klingeltaster | ✅ |
+| Mehrere browserbasierte Innenstationen | ✅ |
+| Audio | 🚧 |
+| Gegensprechen | 🚧 |
+| MQTT | 🚧 |
+| Home-Assistant-Anbindung | 🚧 |
+| Dokumentation | 🚧 |
+
+---
+
+## Systemübersicht
+
+![Blockdiagramm](docs/images/Blockdiagramm.png)
+
+Das System besteht aus zwei ESP32-S3-Modulen.
+
+### Außenstation
+
+- Seeed XIAO ESP32-S3 Sense
+- OV2640 Kamera
+- Klingeltaster
+- Status-LEDs
+
+Die Außenstation erzeugt den Videostream und erkennt Klingelereignisse.
+
+### Audio-/Steuereinheit
+
+- Waveshare ESP32-S3
+- Webserver
+- Audio-Hardware
+- Steuerlogik
+
+Die Kommunikation zwischen beiden ESP32 erfolgt über eine schnelle UART-Verbindung.
+
+---
+
+## Bisher implementiert
+
+- MJPEG-Livestream
+- mehrere virtuelle Innenstationen
+- browserbasierte Bedienung
+- getrennte Kamera- und Audiohardware
+- modularer Aufbau
+- vollständig lokaler Betrieb
+
+---
+
+## Geplant
+
+- Audio
+- Gegensprechen
+- MQTT
+- Home-Assistant-Integration
+- OTA-Updates
+- Türöffner
+- Konfigurationsoberfläche
+
+Die Reihenfolge kann sich während der Entwicklung ändern.
+
+---
+
+## Hardware
+
+### Außenstation
+
+- Seeed XIAO ESP32-S3 Sense
+- OV2640 Kamera
+
+### Inneneinheit
+
+- Waveshare ESP32-S3
+- INMP441 Mikrofon
+- MAX98357A Audioverstärker
+- Lautsprecher
+
+---
+
+## Software
+
+- Arduino IDE
+- ESP32 Arduino Framework
+- LittleFS
+- AsyncWebServer
+- mDNS
+
+Weitere Komponenten werden im Laufe der Entwicklung ergänzt.
+
+---
+
+## Projektstatus
+
+Dies ist kein fertiges Produkt.
+
+Das Repository dokumentiert den Entwicklungsprozess. Manche Funktionen sind bereits nutzbar, andere befinden sich noch im Aufbau. Änderungen an Hardware, Software und Dokumentation sind jederzeit möglich.
+
+---
+
+## Mitmachen
+
+Anregungen, Verbesserungsvorschläge und Pull Requests sind willkommen.
+
+Wer das Projekt nachbauen möchte, sollte damit rechnen, dass sich Pinbelegungen, Hardware und Software bis zur ersten stabilen Version noch ändern können.
+
+---
+
+## Lizenz
+
+Die Lizenz wird vor der ersten offiziellen Version festgelegt.
