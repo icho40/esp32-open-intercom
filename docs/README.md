@@ -136,4 +136,6 @@ Wer das Projekt nachbauen möchte, sollte damit rechnen, dass sich Pinbelegungen
 
 ## Lizenz
 
-Die Lizenz wird vor der ersten offiziellen Version festgelegt.
+Dieses Projekt steht unter der GNU General Public License v3.0 oder neuer (GPL-3.0-or-later).
+
+Siehe die Datei `LICENSE` für den vollständigen Lizenztext.
